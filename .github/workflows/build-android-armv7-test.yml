@@ -44,7 +44,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
+          # Runner image ships a flaky Google Chrome apt source; drop it so apt-get update can succeed
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.list.save || true
+          sudo apt-get update -o Acquire::Retries=3
           sudo apt-get install -y \
                clang cmake curl gcc-multilib git g++ g++-multilib \
                libclang-dev llvm-dev nasm ninja-build \
