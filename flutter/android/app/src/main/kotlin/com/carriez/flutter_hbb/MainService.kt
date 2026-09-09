@@ -64,7 +64,6 @@ const val VIDEO_KEY_FRAME_RATE = 30
 class MainService : Service() {
 
     @Keep
-    @RequiresApi(Build.VERSION_CODES.N)
     fun rustPointerInput(kind: Int, mask: Int, x: Int, y: Int) {
         // turn on screen with LEFT_DOWN when screen off
         if (!powerManager.isInteractive && (kind == 0 || mask == LEFT_DOWN)) {
@@ -75,6 +74,10 @@ class MainService : Service() {
             Log.d(logTag,"Turn on Screen")
             wakeLock.acquire(5000)
         } else {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                ShellInputInjector.onPointer(mask, x, y)
+                return
+            }
             when (kind) {
                 0 -> { // touch
                     InputService.ctx?.onTouchInput(mask, x, y)
@@ -89,8 +92,11 @@ class MainService : Service() {
     }
 
     @Keep
-    @RequiresApi(Build.VERSION_CODES.N)
     fun rustKeyEventInput(input: ByteArray) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            ShellInputInjector.onKey(input)
+            return
+        }
         InputService.ctx?.onKeyEvent(input)
     }
 
@@ -697,7 +703,7 @@ class MainService : Service() {
         Handler(Looper.getMainLooper()).post {
             MainActivity.flutterMethodChannel?.invokeMethod(
                 "on_state_changed",
-                mapOf("name" to "input", "value" to InputService.isOpen.toString())
+                mapOf("name" to "input", "value" to ShellInputInjector.isRemoteInputReady().toString())
             )
         }
         return isReady

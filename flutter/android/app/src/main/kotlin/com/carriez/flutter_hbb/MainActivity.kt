@@ -98,7 +98,8 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
-        val inputPer = InputService.isOpen
+        ShellInputInjector.requestShizukuPermissionIfNeeded(REQ_SHIZUKU_PERMISSION)
+        val inputPer = ShellInputInjector.isRemoteInputReady()
         activity.runOnUiThread {
             flutterMethodChannel?.invokeMethod(
                 "on_state_changed",
@@ -326,7 +327,7 @@ class MainActivity : FlutterActivity() {
                 "check_service" -> {
                     Companion.flutterMethodChannel?.invokeMethod(
                         "on_state_changed",
-                        mapOf("name" to "input", "value" to InputService.isOpen.toString())
+                        mapOf("name" to "input", "value" to ShellInputInjector.isRemoteInputReady().toString())
                     )
                     Companion.flutterMethodChannel?.invokeMethod(
                         "on_state_changed",

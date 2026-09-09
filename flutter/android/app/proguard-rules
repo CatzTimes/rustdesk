@@ -5,3 +5,7 @@
 
 # Keep rustls-platform-verifier classes for JNI
 -keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
+
+# Shizuku API (privileged shell input on API < 24)
+-keep class rikka.shizuku.** { *; }
+-keep class moe.shizuku.** { *; }

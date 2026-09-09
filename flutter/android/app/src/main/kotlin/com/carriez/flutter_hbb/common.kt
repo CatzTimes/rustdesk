@@ -43,6 +43,7 @@ const val REQ_EXPORT_FILE = 301
 const val REQ_IMPORT_FILES = 302
 const val REQ_IMPORT_DIRECTORY = 303
 const val REQ_EXPORT_FILES = 304
+const val REQ_SHIZUKU_PERMISSION = 305
 
 // Activity responseCode
 const val RES_FAILED = -100
