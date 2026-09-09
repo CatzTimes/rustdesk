@@ -44,10 +44,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Runner image ships a flaky Google Chrome apt source; drop it so apt-get update can succeed
-          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.list.save || true
-          sudo apt-get update -o Acquire::Retries=3
-          sudo apt-get install -y \
+          # Runner image has a flaky Google Chrome apt source that causes Hash Sum mismatch
+          sudo find /etc/apt -type f \( -iname '*chrome*' -o -iname '*google*' \) -print -delete || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get update -o Acquire::Retries=5 || true
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
                clang cmake curl gcc-multilib git g++ g++-multilib \
                libclang-dev llvm-dev nasm ninja-build \
                openjdk-17-jdk-headless pkg-config wget \
