@@ -92,7 +92,7 @@ jobs:
       - name: Patch flutter
         run: |
           cd $(dirname $(dirname $(which flutter)))
-          git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
+          git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff || echo "flutter patch already applied or not needed"
 
       - uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
         id: setup-ndk
