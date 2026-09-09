@@ -67,7 +67,7 @@ jobs:
         run: |
           cargo install cargo-expand --version ${{ env.CARGO_EXPAND_VERSION }} --locked
           cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid" --locked
-          # Same pubspec tweak as bridge.yml for Flutter 3.22.3
+          # Same pubspec tweak as bridge.yml for Flutter 3.22.3 only
           sed -i -e 's/extended_text: 14.0.0/extended_text: 13.0.0/g' flutter/pubspec.yaml
           pushd flutter && flutter pub get && popd
           ~/.cargo/bin/flutter_rust_bridge_codegen \
@@ -75,6 +75,8 @@ jobs:
             --dart-output ./flutter/lib/generated_bridge.dart \
             --c-output ./flutter/macos/Runner/bridge_generated.h
           cp ./flutter/macos/Runner/bridge_generated.h ./flutter/ios/Runner/bridge_generated.h
+          # Restore pubspec: Flutter 3.24.5 Android build needs extended_text 14
+          git checkout -- flutter/pubspec.yaml
 
       - name: Install flutter (Android 3.24.5)
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
