@@ -164,10 +164,31 @@ object ShellInputInjector {
 
     private fun tryShizuku(): Boolean {
         return try {
-            if (!Shizuku.pingBinder()) return false
-            if (Shizuku.isPreV11()) return false
-            if (Shizuku.checkSelfPermission() != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (!Shizuku.pingBinder()) {
+                Log.d(TAG, "Shizuku binder not ready")
                 return false
+            }
+            // Shizuku 3.6.1 (last build for Android 5.1) is pre-v11: permission is the
+            // normal API permission granted in the manager, not the v11 runtime dialog.
+            // Still try newProcess when the binder is alive.
+            val preV11 = try {
+                Shizuku.isPreV11()
+            } catch (e: Throwable) {
+                false
+            }
+            if (!preV11) {
+                val granted = try {
+                    Shizuku.checkSelfPermission() ==
+                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                } catch (e: Throwable) {
+                    true
+                }
+                if (!granted) {
+                    Log.d(TAG, "Shizuku permission not granted")
+                    return false
+                }
+            } else {
+                Log.i(TAG, "Shizuku pre-v11 (e.g. v3.6.1 on Android 5.1); trying newProcess")
             }
             val p = openShizukuProcess() ?: return false
             attachShell(p, Backend.SHIZUKU)
