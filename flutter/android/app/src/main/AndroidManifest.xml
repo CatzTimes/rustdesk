@@ -4,7 +4,7 @@
     package="com.carriez.flutter_hbb">
 
     <!-- Shizuku modules declare minSdk 23/24; keep app minSdk 22 for Android 5.1 hosts -->
-    <uses-sdk tools:overrideLibrary="rikka.shizuku.provider,rikka.shizuku.api,rikka.shizuku.shared,rikka.shizuku.hidden,dev.rikka.shizuku" />
+    <uses-sdk tools:overrideLibrary="rikka.shizuku.provider,rikka.shizuku.api,rikka.shizuku.shared,rikka.shizuku.aidl,rikka.shizuku.hidden,dev.rikka.shizuku" />
 
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
