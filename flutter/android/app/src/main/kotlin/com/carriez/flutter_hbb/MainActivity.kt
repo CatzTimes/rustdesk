@@ -98,7 +98,9 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        ShellInputInjector.init(this)
         ShellInputInjector.requestShizukuPermissionIfNeeded(REQ_SHIZUKU_PERMISSION)
+        ShellInputInjector.isReady()
         val inputPer = ShellInputInjector.isRemoteInputReady()
         activity.runOnUiThread {
             flutterMethodChannel?.invokeMethod(

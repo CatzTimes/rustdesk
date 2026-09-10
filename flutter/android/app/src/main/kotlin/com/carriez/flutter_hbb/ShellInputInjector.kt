@@ -1,5 +1,7 @@
 package com.carriez.flutter_hbb
 
+import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.KeyEvent as KeyEventAndroid
@@ -9,6 +11,7 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.util.UUID
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
@@ -45,6 +48,24 @@ object ShellInputInjector {
     private var suProbed = false
     @Volatile
     private var suAvailable = false
+    @Volatile
+    private var appContext: Context? = null
+
+    fun init(context: Context) {
+        if (appContext == null) {
+            appContext = context.applicationContext
+            try {
+                Shizuku.addBinderReceivedListenerSticky {
+                    Log.i(TAG, "Shizuku binder received (sticky/listener)")
+                }
+                Shizuku.addBinderDeadListener {
+                    Log.w(TAG, "Shizuku binder dead")
+                }
+            } catch (e: Throwable) {
+                Log.w(TAG, "Shizuku listener register failed: ${e.message}")
+            }
+        }
+    }
 
     fun isReady(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) return false
@@ -164,43 +185,91 @@ object ShellInputInjector {
 
     private fun tryShizuku(): Boolean {
         return try {
-            if (!Shizuku.pingBinder()) {
-                Log.d(TAG, "Shizuku binder not ready")
-                return false
+            val ping = try {
+                Shizuku.pingBinder()
+            } catch (e: Throwable) {
+                Log.w(TAG, "Shizuku.pingBinder threw: ${e.message}")
+                false
             }
-            // Shizuku 3.6.1 (last build for Android 5.1) is pre-v11: permission is the
-            // normal API permission granted in the manager, not the v11 runtime dialog.
-            // Still try newProcess when the binder is alive.
+            Log.i(TAG, "Shizuku pingBinder=$ping")
+            if (!ping) return false
+
             val preV11 = try {
                 Shizuku.isPreV11()
             } catch (e: Throwable) {
                 false
             }
+            Log.i(TAG, "Shizuku isPreV11=$preV11 sdk=${Build.VERSION.SDK_INT}")
+
             if (!preV11) {
                 val granted = try {
                     Shizuku.checkSelfPermission() ==
                         android.content.pm.PackageManager.PERMISSION_GRANTED
                 } catch (e: Throwable) {
+                    Log.w(TAG, "checkSelfPermission: ${e.message}")
                     true
                 }
                 if (!granted) {
-                    Log.d(TAG, "Shizuku permission not granted")
+                    Log.w(TAG, "Shizuku v11+ permission not granted")
                     return false
                 }
             } else {
-                Log.i(TAG, "Shizuku pre-v11 (e.g. v3.6.1 on Android 5.1); trying newProcess")
+                val tokenOk = tryLegacyTokenUnlock()
+                Log.i(TAG, "Shizuku pre-v11 token unlock=$tokenOk")
             }
-            val p = openShizukuProcess() ?: return false
+
+            val p = openShizukuProcess()
+            if (p == null) {
+                Log.w(TAG, "Shizuku newProcess returned null")
+                return false
+            }
             attachShell(p, Backend.SHIZUKU)
             true
         } catch (e: Throwable) {
-            Log.w(TAG, "Shizuku unavailable: ${e.message}")
+            Log.w(TAG, "Shizuku unavailable: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Shizuku 3.6.1 / API 22: manager token + setUidToken so newProcess is allowed
+     * unless the manager already pushed setUidPermissionPre23 on ALLOW.
+     */
+    private fun tryLegacyTokenUnlock(): Boolean {
+        val ctx = appContext ?: return false
+        return try {
+            val uri = Uri.parse("content://moe.shizuku.manager.tokenprovider")
+            val reply = ctx.contentResolver.call(uri, "getToken", null, null)
+            if (reply == null) {
+                Log.w(TAG, "TokenProvider null (allow RustDesk in Shizuku manager first)")
+                return false
+            }
+            val most = reply.getLong("moe.shizuku.privileged.api.intent.extra.TOKEN_MOST_SIG", 0L)
+            val least = reply.getLong("moe.shizuku.privileged.api.intent.extra.TOKEN_LEAST_SIG", 0L)
+            if (most == 0L && least == 0L) {
+                Log.w(TAG, "TokenProvider empty token")
+                return false
+            }
+            val token = UUID(most, least)
+            Log.i(TAG, "got legacy token, calling setUidToken")
+            val method = Shizuku::class.java.getDeclaredMethod(
+                "setUidToken",
+                String::class.java
+            )
+            method.isAccessible = true
+            val ok = method.invoke(null, token.toString()) as? Boolean ?: false
+            Log.i(TAG, "setUidToken result=$ok")
+            ok
+        } catch (e: NoSuchMethodException) {
+            Log.w(TAG, "Shizuku.setUidToken not present: ${e.message}")
+            false
+        } catch (e: Throwable) {
+            Log.w(TAG, "legacy token unlock failed: ${e.message}")
             false
         }
     }
 
     private fun openShizukuProcess(): Process? {
-        // newProcess is public on Shizuku 11–13, private on master; call via reflection.
         return try {
             val method = Shizuku::class.java.getDeclaredMethod(
                 "newProcess",
@@ -209,7 +278,9 @@ object ShellInputInjector {
                 String::class.java
             )
             method.isAccessible = true
-            method.invoke(null, arrayOf("sh"), null, null) as? Process
+            val p = method.invoke(null, arrayOf("sh"), null, null) as? Process
+            Log.i(TAG, "Shizuku.newProcess -> $p")
+            p
         } catch (e: NoSuchMethodException) {
             Log.w(TAG, "Shizuku.newProcess not present")
             null
