@@ -112,6 +112,13 @@ object ShizukuLegacyInput {
     @Volatile
     private var shizukuBinder: IBinder? = null
 
+    // Set once the server accepted our token or granted the API_V23 runtime
+    // permission; cleared whenever a different server binder arrives or dies,
+    // so unauthorized key events fall back to InputService instead of
+    // failing injection one SecurityException at a time.
+    @Volatile
+    private var authorized = false
+
     @Volatile
     private var inputBinder: IBinder? = null
 
@@ -142,6 +149,7 @@ object ShizukuLegacyInput {
         Log.w(TAG, "Shizuku server died; waiting for it to push a new binder")
         shizukuBinder = null
         inputBinder = null
+        authorized = false
     }
 
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
@@ -174,7 +182,7 @@ object ShizukuLegacyInput {
      */
     fun maybeHandleKeyEvent(data: ByteArray): Boolean {
         val binder = shizukuBinder
-        if (binder == null || !binder.isBinderAlive) {
+        if (binder == null || !binder.isBinderAlive || !authorized) {
             return false
         }
         val keyEvent = try {
@@ -328,6 +336,7 @@ object ShizukuLegacyInput {
 
     fun onPermissionResult(grantResults: IntArray) {
         val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        authorized = granted
         Log.i(TAG, "Shizuku API_V23 permission ${if (granted) "granted" else "denied"}")
     }
 
@@ -350,7 +359,18 @@ object ShizukuLegacyInput {
         }
         shizukuBinder = newBinder
         inputBinder = null
+        authorized = false
         Log.i(TAG, "Shizuku server binder received")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // The runtime permission persists across server restarts; re-check
+            // it here since no setUidToken round-trip happens on API 23.
+            val context = appContext
+            if (context != null &&
+                context.checkSelfPermission(PERMISSION_V23) == PackageManager.PERMISSION_GRANTED
+            ) {
+                authorized = true
+            }
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             if (loadToken() != null) {
                 sendToken(newBinder)
@@ -616,6 +636,7 @@ object ShizukuLegacyInput {
                     binder.transact(SHIZUKU_TRANSACTION_SET_UID_TOKEN, payload, reply, 0)
                     reply.readException()
                     val ok = reply.readInt() != 0
+                    authorized = ok
                     Log.i(TAG, "setUidToken: $ok")
                     if (!ok) {
                         // Stale token: the server was restarted since the last
