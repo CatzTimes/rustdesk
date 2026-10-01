@@ -1,182 +1,105 @@
-<p align="center">
-  <img src="res/logo-header.svg" alt="RustDesk - Your remote desktop"><br>
-  <a href="#raw-steps-to-build">Build</a> •
-  <a href="#how-to-build-with-docker">Docker</a> •
-  <a href="#file-structure">Structure</a> •
-  <a href="#screenshots">Screenshots</a><br>
-  [<a href="docs/README-UA.md">Українська</a>] | [<a href="docs/README-CS.md">česky</a>] | [<a href="docs/README-ZH.md">中文</a>] | [<a href="docs/README-HU.md">Magyar</a>] | [<a href="docs/README-ES.md">Español</a>] | [<a href="docs/README-FA.md">فارسی</a>] | [<a href="docs/README-FR.md">Français</a>] | [<a href="docs/README-DE.md">Deutsch</a>] | [<a href="docs/README-PL.md">Polski</a>] | [<a href="docs/README-ID.md">Indonesian</a>] | [<a href="docs/README-FI.md">Suomi</a>] | [<a href="docs/README-ML.md">മലയാളം</a>] | [<a href="docs/README-JP.md">日本語</a>] | [<a href="docs/README-NL.md">Nederlands</a>] | [<a href="docs/README-IT.md">Italiano</a>] | [<a href="docs/README-RU.md">Русский</a>] | [<a href="docs/README-PTBR.md">Português (Brasil)</a>] | [<a href="docs/README-EO.md">Esperanto</a>] | [<a href="docs/README-KR.md">한국어</a>] | [<a href="docs/README-AR.md">العربي</a>] | [<a href="docs/README-VN.md">Tiếng Việt</a>] | [<a href="docs/README-DA.md">Dansk</a>] | [<a href="docs/README-GR.md">Ελληνικά</a>] | [<a href="docs/README-TR.md">Türkçe</a>] | [<a href="docs/README-NO.md">Norsk</a>] | [<a href="docs/README-RO.md">Română</a>]<br>
-  <b>We need your help to translate this README, <a href="https://github.com/rustdesk/rustdesk/tree/master/src/lang">RustDesk UI</a> and <a href="https://github.com/rustdesk/doc.rustdesk.com">RustDesk Doc</a> to your native language</b>
-</p>
+# RustDesk — Android 5.1 / 6.0 Shizuku 操控支持版
 
-> [!Caution]
-> **Misuse Disclaimer:** <br>
-> The developers of RustDesk do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized access, control or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+> 独立维护分支 · Independently maintained fork, based on [rustdesk/rustdesk](https://github.com/rustdesk/rustdesk) `1.5.0` (AGPL-3.0)
 
+[中文](#中文说明) · [English](#english)
 
-Chat with us: [Discord](https://discord.gg/nDceKgxnkV) | [Twitter](https://twitter.com/rustdesk) | [Reddit](https://www.reddit.com/r/rustdesk) | [YouTube](https://www.youtube.com/@rustdesk)
+---
 
-[![RustDesk Server Pro](https://img.shields.io/badge/RustDesk%20Server%20Pro-Advanced%20Features-blue)](https://rustdesk.com/pricing.html)
+## 中文说明
 
-Yet another remote desktop solution, written in Rust. Works out of the box with no configuration required. You have full control of your data, with no concerns about security. You can use our rendezvous/relay server, [set up your own](https://rustdesk.com/server), or [write your own rendezvous/relay server](https://github.com/rustdesk/rustdesk-server-demo).
+### 这是什么
 
-![image](https://user-images.githubusercontent.com/71636191/171661982-430285f0-2e12-4b1d-9957-4a58e375304d.png)
+官方 RustDesk 最低支持 **Android 7**。在 Android 5.1 / 6.0（API 22/23）上，被控端只能共享屏幕、无法被远程操控——官方实现依赖的无障碍手势 API（`dispatchGesture`）在这些系统上不存在，且上游已决定不支持 Android < 7（见 [PR #16391](https://github.com/rustdesk/rustdesk/pull/16391)）。
 
-RustDesk welcomes contribution from everyone. See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for help getting started.
+本仓库基于官方 `1.5.0` 源码，为 **Android 5.1 / 6.0** 补齐了被控端操控：通过 [Shizuku](https://github.com/RikkaApps/Shizuku)（免 root，adb 激活）以 shell 权限注入远程指针与按键事件。
 
-[**FAQ**](https://github.com/rustdesk/rustdesk/wiki/FAQ)
+> ⚠️ 本仓库为独立维护分支，**不向上游提交 PR**，也**不跟随官方 nightly/每日构建**；仅当官方发布正式版本时，从对应 release tag 合并更新（见[更新策略](#更新策略)）。
 
-[**BINARY DOWNLOAD**](https://github.com/rustdesk/rustdesk/releases)
+### 功能
 
-[**NIGHTLY BUILD**](https://github.com/rustdesk/rustdesk/releases/tag/nightly)
+- **远程指针**：点击、拖动、右键（长按）、滚轮、中键（单击 = HOME、按住 = 最近任务）、BACK
+- **远程按键**：Backspace、方向键、Enter、F 键等（经 Shizuku 注入，**不依赖无障碍**）
+- **远程打字**（字母/中文）：走系统无障碍——Android 的限制：免 root 下无障碍是唯一能提交任意文本的通道（中文没有键码）
+- 屏幕采集、剪贴板同步与官方版本一致
 
-[<img src="https://f-droid.org/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/en/packages/com.carriez.flutter_hbb)
-[<img src="https://flathub.org/api/badge?svg&locale=en"
-    alt="Get it on Flathub"
-    height="80">](https://flathub.org/apps/com.rustdesk.RustDesk)
+### 设备要求与 Shizuku 下载
 
-## Dependencies
+| 系统 | Shizuku 版本 | 下载 |
+|---|---|---|
+| Android 5.1（API 22） | **v3.6.1** | [shizuku-3.6.1.apk（3.05 MB）](https://github.com/RikkaApps/Shizuku/releases/download/v3.6.1/shizuku-3.6.1.r341.009208f-release.apk) |
+| Android 6.0（API 23） | **v13.2.1**（v3.6.1 与 v4~v12 亦可） | [shizuku-v13.2.1.apk（3.4 MB）](https://github.com/RikkaApps/Shizuku/releases/download/v13.2.1/shizuku-v13.2.1.r958.5f9516b-release.apk) |
 
-Desktop versions use Flutter or Sciter (deprecated) for GUI. This tutorial is for Sciter only, since it is easier and more friendly to start. Check out our [CI](https://github.com/rustdesk/rustdesk/blob/master/.github/workflows/flutter-build.yml) for building the Flutter version.
+本分支的客户端与上表全部版本（v3.6.1 → v13.2.1）的 Shizuku 服务端兼容（已逐一核对服务端源码）。
 
-Please download Sciter dynamic library yourself.
+### 快速上手
 
-[Windows](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sciter.dll) |
-[Linux](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so) |
-[macOS](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.osx/libsciter.dylib)
+1. 安装对应版本的 Shizuku，电脑连接手机后执行激活：
 
-## Raw Steps to build
+   ```bash
+   adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/files/start.sh
+   ```
 
-- Prepare your Rust development env and C++ build env
+2. 安装本仓库 [Releases](https://github.com/CatzTimes/rustdesk/releases) 中的 APK：`armv7` 对应 32 位手机，`arm64` 对应 64 位手机。
+3. 打开 RustDesk → 首次使用会弹出 Shizuku 授权框 → **允许**。
+4. 系统设置中开启 RustDesk 无障碍服务（**只影响打字**；指针与按键不依赖它）。
+5. 从任意设备连接即可操控。
 
-- Install [vcpkg](https://github.com/microsoft/vcpkg), and set `VCPKG_ROOT` env variable correctly
+### APK 获取
 
-  - Windows: vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-  - Linux/macOS: vcpkg install libvpx libyuv opus aom
+- [Releases](https://github.com/CatzTimes/rustdesk/releases)：随官方正式版本更新。首个发布 `v1.5.0-shizuku.1`，基于官方 `1.5.0`。
+- [Actions](https://github.com/CatzTimes/rustdesk/actions/workflows/build-android-apk.yml)：可手动触发构建（armv7 + arm64）。
+- 注意：本仓库 APK 为 debug 签名，与官方版签名不同——从官方版切换需**卸载重装**（会清除应用内配置）。
 
-- run `cargo run`
+### 更新策略
 
-## [Build](https://rustdesk.com/docs/en/dev/build/)
+- **不**跟随官方 nightly / 每日构建。
+- 官方发布正式版本（如 `1.5.0`、未来的 `1.5.x`）时，从对应 release tag 合并到本分支并发布新包。
 
-## How to Build on Linux
+### 已知限制
 
-### Ubuntu 18 (Debian 10)
+- 中文 / IME 组合输入无法从电脑端直接发送：rustdesk 桌面控制端只转发原始按键，属上游行为（所有受控平台如此）。替代方案：复制文字后在远程会话中 **Ctrl+V**（需开启剪贴板同步）。
+- 不开启无障碍时，打字不可用（指针与按键不受影响）。
 
-```sh
-sudo apt install -y zip g++ gcc git curl wget nasm yasm libgtk-3-dev clang libxcb-randr0-dev libxdo-dev \
-        libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev libpulse-dev cmake make \
-        libclang-dev ninja-build libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-```
+---
 
-### openSUSE Tumbleweed
+## English
 
-```sh
-sudo zypper install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libXfixes-devel cmake alsa-lib-devel gstreamer-devel gstreamer-plugins-base-devel xdotool-devel
-```
+### What this is
 
-### Fedora 28 (CentOS 8)
+Official RustDesk supports Android 7+. On Android 5.1/6.0 (API 22/23) a controlled device can share its screen but cannot be remote-controlled: the only injection path upstream implements (`AccessibilityService#dispatchGesture`) does not exist on those versions, and upstream has decided not to support Android < 7 ([PR #16391](https://github.com/rustdesk/rustdesk/pull/16391)).
 
-```sh
-sudo yum -y install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libxdo-devel libXfixes-devel pulseaudio-libs-devel cmake alsa-lib-devel gstreamer1-devel gstreamer1-plugins-base-devel
-```
+This fork adds the missing control on top of the official `1.5.0` source: remote pointer and key-code events are injected as the shell user through [Shizuku](https://github.com/RikkaApps/Shizuku) (no root, adb-activated). Keyboard *text* still goes through the accessibility text path — the only non-root way to commit arbitrary text (CJK has no key codes).
 
-### Arch (Manjaro)
+> This fork does **not** submit PRs upstream and does **not** track nightly builds; it is only updated by merging official **release tags**.
 
-```sh
-sudo pacman -Syu --needed unzip git cmake gcc curl wget yasm nasm zip make pkg-config clang gtk3 xdotool libxcb libxfixes alsa-lib pipewire
-```
+### Requirements & Shizuku downloads
 
-### Install vcpkg
+| Android | Shizuku | Download |
+|---|---|---|
+| 5.1 (API 22) | **v3.6.1** | [shizuku-3.6.1.apk (3.05 MB)](https://github.com/RikkaApps/Shizuku/releases/download/v3.6.1/shizuku-3.6.1.r341.009208f-release.apk) |
+| 6.0 (API 23) | **v13.2.1** (v3.6.1 and v4~v12 also work) | [shizuku-v13.2.1.apk (3.4 MB)](https://github.com/RikkaApps/Shizuku/releases/download/v13.2.1/shizuku-v13.2.1.r958.5f9516b-release.apk) |
 
-```sh
-git clone https://github.com/microsoft/vcpkg
-cd vcpkg
-git checkout 2023.04.15
-cd ..
-vcpkg/bootstrap-vcpkg.sh
-export VCPKG_ROOT=$HOME/vcpkg
-vcpkg/vcpkg install libvpx libyuv opus aom
-```
+The client in this fork is wire-compatible with every server version above (verified against the server sources).
 
-### Fix libvpx (For Fedora)
+### Quick start
 
-```sh
-cd vcpkg/buildtrees/libvpx/src
-cd *
-./configure
-sed -i 's/CFLAGS+=-I/CFLAGS+=-fPIC -I/g' Makefile
-sed -i 's/CXXFLAGS+=-I/CXXFLAGS+=-fPIC -I/g' Makefile
-make
-cp libvpx.a $HOME/vcpkg/installed/x64-linux/lib/
-cd
-```
+1. Install the matching Shizuku APK and activate it:
 
-### Build
+   ```bash
+   adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/files/start.sh
+   ```
 
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-git clone --recurse-submodules https://github.com/rustdesk/rustdesk
-cd rustdesk
-mkdir -p target/debug
-wget https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so
-mv libsciter-gtk.so target/debug
-VCPKG_ROOT=$HOME/vcpkg cargo run
-```
+2. Install an APK from [Releases](https://github.com/CatzTimes/rustdesk/releases): `armv7` for 32-bit phones, `arm64` for 64-bit phones.
+3. Open RustDesk → allow the Shizuku authorization prompt.
+4. Enable the RustDesk accessibility service (only needed for typing).
+5. Connect from any client.
 
-## How to build with Docker
+### Known limitations
 
-Begin by cloning the repository and building the Docker container:
+- IME-composed text (e.g. Chinese) is not transmitted by the desktop controller (raw keys only) — upstream behavior on all platforms. Workaround: copy the text and **Ctrl+V** in the remote session.
+- Typing requires the accessibility toggle; pointer and control keys work without it.
 
-```sh
-git clone https://github.com/rustdesk/rustdesk
-cd rustdesk
-git submodule update --init --recursive
-docker build -t "rustdesk-builder" .
-```
+### Credits
 
-Then, each time you need to build the application, run the following command:
-
-```sh
-docker run --rm -it -v $PWD:/home/user/rustdesk -v rustdesk-git-cache:/home/user/.cargo/git -v rustdesk-registry-cache:/home/user/.cargo/registry -e PUID="$(id -u)" -e PGID="$(id -g)" rustdesk-builder
-```
-
-Note that the first build may take longer before dependencies are cached, subsequent builds will be faster. Additionally, if you need to specify different arguments to the build command, you may do so at the end of the command in the `<OPTIONAL-ARGS>` position. For instance, if you wanted to build an optimized release version, you would run the command above followed by `--release`. The resulting executable will be available in the target folder on your system, and can be run with:
-
-```sh
-target/debug/rustdesk
-```
-
-Or, if you're running a release executable:
-
-```sh
-target/release/rustdesk
-```
-
-Please ensure that you run these commands from the root of the RustDesk repository, or the application may not find the required resources. Also note that other cargo subcommands such as `install` or `run` are not currently supported via this method as they would install or run the program inside the container instead of the host.
-
-## File Structure
-
-- **[libs/hbb_common](https://github.com/rustdesk/rustdesk/tree/master/libs/hbb_common)**: video codec, config, tcp/udp wrapper, and some other utility functions shared with the server
-- **[libs/base](https://github.com/rustdesk/rustdesk/tree/master/libs/base)**: protobuf, fs functions for file transfer, keyboard and platform code used only by this app
-- **[libs/scrap](https://github.com/rustdesk/rustdesk/tree/master/libs/scrap)**: screen capture
-- **[libs/enigo](https://github.com/rustdesk/rustdesk/tree/master/libs/enigo)**: platform specific keyboard/mouse control
-- **[libs/clipboard](https://github.com/rustdesk/rustdesk/tree/master/libs/clipboard)**: file copy and paste implementation for Windows, Linux, macOS.
-- **[src/ui](https://github.com/rustdesk/rustdesk/tree/master/src/ui)**: obsolete Sciter UI (deprecated)
-- **[src/server](https://github.com/rustdesk/rustdesk/tree/master/src/server)**: audio/clipboard/input/video services, and network connections
-- **[src/client.rs](https://github.com/rustdesk/rustdesk/tree/master/src/client.rs)**: start a peer connection
-- **[src/rendezvous_mediator.rs](https://github.com/rustdesk/rustdesk/tree/master/src/rendezvous_mediator.rs)**: Communicate with [rustdesk-server](https://github.com/rustdesk/rustdesk-server), wait for remote direct (TCP hole punching) or relayed connection
-- **[src/platform](https://github.com/rustdesk/rustdesk/tree/master/src/platform)**: platform specific code
-- **[flutter](https://github.com/rustdesk/rustdesk/tree/master/flutter)**: Flutter code for desktop and mobile
-
-## Screenshots
-
-![Connection Manager](https://github.com/rustdesk/rustdesk/assets/28412477/db82d4e7-c4bc-4823-8e6f-6af7eadf7651)
-
-![Connected to a Windows PC](https://github.com/rustdesk/rustdesk/assets/28412477/9baa91e9-3362-4d06-aa1a-7518edcbd7ea)
-
-![File Transfer](https://github.com/rustdesk/rustdesk/assets/28412477/39511ad3-aa9a-4f8c-8947-1cce286a46ad)
-
-![TCP Tunneling](https://github.com/rustdesk/rustdesk/assets/28412477/78e8708f-e87e-4570-8373-1360033ea6c5)
-
+Based on [RustDesk](https://github.com/rustdesk/rustdesk) (AGPL-3.0). Injection backend built on [Shizuku](https://github.com/RikkaApps/Shizuku) by RikkaApps.
